@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory.hpp>
+#include <iterator.hpp>
 
 namespace ft
 {
@@ -37,17 +38,22 @@ namespace ft
 		T const*	valptr() const { return static_cast<T const*>&data; };
 	};
 
+	/**
+	 * @brief A list::iterator.
+	 *
+	 * @tparam T	The list's data type.
+	 */
 	template<typename T>
 	struct	_list_iterator
 	{
 		typedef	_list_iterator<T>	_self;
 		typedef	_list_node<T>		_node;
 
-		typedef	ptrdiff_t	difference_type;
-		// TODO: Bidirectional iterator tag typedef
-		typedef	T			value_type;
-		typedef	T*			pointer;
-		typedef	T&			reference;
+		typedef	ptrdiff_t					difference_type;
+		typedef bidirectional_iterator_tag	iterator_category;
+		typedef	T							value_type;
+		typedef	T*							pointer;
+		typedef	T&							reference;
 
 		_list_iterator() throw()
 			: node() { }
@@ -99,6 +105,11 @@ namespace ft
 		detail::_list_node_base*	node;
 	};
 
+	/**
+	 * @brief A list::const_iterator
+	 *
+	 * @tparam T	The list's data-type.
+	 */
 	template<typename T>
 	struct	_list_const_iterator
 	{
@@ -106,11 +117,11 @@ namespace ft
 		typedef const _list_node<T>		_node;
 		typedef _list_iterator			iterator;
 
-		typedef	ptrdiff_t	difference_type;
-		// TODO: Bidirectional iterator tag typedef
-		typedef	T			value_type;
-		typedef	T*			pointer;
-		typedef	T&			reference;
+		typedef	ptrdiff_t					difference_type;
+		typedef bidirectional_iterator_tag	iterator_category;
+		typedef	T							value_type;
+		typedef	T*							pointer;
+		typedef	T&							reference;
 
 		_list_const_iterator() throw()
 		: _node() { }
@@ -165,11 +176,13 @@ namespace ft
 		detail::_list_node_base*	node;
 	};
 
+
 	template<typename T, typename A>
 	class _list_base
 	{
 	protected:
 		// TODO: Allocator traits typedef
+		//typedef
 		static size_t	distance(const detail::_list_node_base* first,
 			const detail::_list_node_base* last)
 		{
@@ -184,11 +197,22 @@ namespace ft
 	};
 
 	template<typename T, typename A = allocator<T> >
-	class	list
+	class	list : protected _list_base<T, A>
 	{
 	private:
+		typedef _list_base<T, A>	_base;
+		// TODO: Allocator traits typedef
 
 	public:
+		typedef T	value_type;
+		// TODO: Pointer and reference types
+		typedef _list_iterator<T>		iterator;
+		typedef _list_const_iterator<T>	const_iterator;
+		// TODO: Reverse iterator types
+		typedef size_t					size_type;
+		typedef ptrdiff_t				difference_type;
+		typedef A						allocator_type;
+
 		list();
 		~list();
 	};
