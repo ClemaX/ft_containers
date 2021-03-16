@@ -96,10 +96,10 @@ namespace ft
 			return previous;
 		}
 
-		friend bool	operator==(const _self& x, const _self& y) throw()
+		friend bool	operator==(_self& const x, _self& const y) throw()
 		{ return x.node == y.node; }
 
-		friend bool	operator!=(const _self& x, const _self& y) throw()
+		friend bool	operator!=(_self& const x, _self& const y) throw()
 		{ return x.node != y.node; }
 
 		detail::_list_node_base*	node;
@@ -167,22 +167,26 @@ namespace ft
 			return previous;
 		}
 
-		friend bool	operator==(const _self& x, const _self& y) throw()
+		friend bool	operator==(_self const& x, _self const& y) throw()
 		{ return x.node == y.node; }
 
-		friend bool	operator!=(const _self& x, const _self& y) throw()
+		friend bool	operator!=(_self const& x, _self const& y) throw()
 		{ return x.node != y.node; }
 
 		detail::_list_node_base*	node;
 	};
 
-
 	template<typename T, typename A>
 	class _list_base
 	{
 	protected:
-		// TODO: Allocator traits typedef
-		//typedef
+		typedef	typename _alloc_traits<A>::template rebind<T>::other
+			T_alloc_type;
+		typedef	_alloc_traits<T_alloc_type>	T_alloc_traits;
+		typedef	typename T_alloc_traits::template rebind<_list_node<T> >::other
+			node_alloc_type;
+		typedef	_alloc_traits<node_alloc_type> node_alloc_traits;
+
 		static size_t	distance(const detail::_list_node_base* first,
 			const detail::_list_node_base* last)
 		{
@@ -194,26 +198,152 @@ namespace ft
 			}
 			return n;
 		}
+
+		struct	_list_impl	:	public _node_alloc_type
+		{
+			detail::_list_node_header	node;
+
+			_list_impl()	:	_node_alloc_type() { }
+			_list_impl(const _node_alloc_type& a)	:	_node_alloc_type(a) { }
+		};
+
+		_list_impl	impl;
+
+		size_t	get_size() const { return 0; }
+		size_t	node_count() const
+		{ return distance(impl.node.next, &impl.node); }
+
+		typename node_alloc_traits::pointer	get_node()
+		{ return node_alloc_traits::allocate(impl, p, 1); }
+
+		void	put_node(typename node_alloc_traits::pointer p) throw()
+		{ node_alloc_traits::deallocate(impl, p, 1); }
+
+	public:
+		typedef	A&	allocator_type;
+
+		node_alloc_type&		get_node_allocator() throw()
+		{ return impl; }
+
+		node_alloc_type const&	get_node_allocator() const throw()
+		{ return impl; }
+
+		void	clear() throw();
+
+		void	init() throw()
+		{ this->impl.node.init(); };
+
+		_list_base() { }
+
+		_list_base(node_alloc_type const& a) throw()	:	impl(a) { }
+
+		~_list_base() throw()
+		{ clear(); }
 	};
 
 	template<typename T, typename A = allocator<T> >
 	class	list : protected _list_base<T, A>
 	{
 	private:
-		typedef _list_base<T, A>	_base;
-		// TODO: Allocator traits typedef
+		typedef _list_base<T, A>					base;
+		typedef	typename base::T_alloc_type			T_alloc_type;
+		typedef	typename base::T_alloc_traits		T_alloc_traits;
+		typedef	typename base::node_alloc_type		node_alloc_type;
+		typedef	typename base::node_alloc_traits	node_alloc_traits;
 
 	public:
-		typedef T	value_type;
-		// TODO: Pointer and reference types
+		typedef T											value_type;
+		typedef typename T_alloc_traits::pointer			pointer;
+		typedef typename T_alloc_traits::const_pointer		const_pointer;
+		typedef typename T_alloc_traits::reference			reference;
+		typedef typename T_alloc_traits::const_reference	const_reference;
+
 		typedef _list_iterator<T>		iterator;
 		typedef _list_const_iterator<T>	const_iterator;
-		// TODO: Reverse iterator types
+
 		typedef size_t					size_type;
 		typedef ptrdiff_t				difference_type;
 		typedef A						allocator_type;
 
-		list();
+	protected:
+		typedef _list_node<T>			node;
+
+		using	base::impl;
+		using	base::put_node;
+		using	base::get_node;
+		using	base::get_node_allocator;
+
+		node*	create_node(value_type const& value)
+		{
+			node*	p = this->get_node();
+
+			try
+			{
+				T_alloc_type	alloc(get_node_allocator());
+				alloc.construct(p->valptr(), value);
+			}
+			catch(...)
+			{
+				put_node(p);
+				throw;
+			}
+			return p;
+		}
+
+	public:
+		list() { };
+
+		explicit list(allocator_type const& a) throw()
+			:	base(node_alloc_type(a)) { }
+
+		explicit list(size_type n, value_type const& value = value_type(),
+			allocator_type const& a = allocator_type())
+			:	base(node_alloc_type(a))
+			{ fill_initialize(n, value); }
+
+		list(list const& x)
+			:	base(node_alloc_traits::select_on_copy(x.get_node_allocator()))
+		{ initialize_dispatch(x.begin(), x.end(), false); }
+
+		template<typename I>
+		list(I first, I last, allocator_type const& a = allocator_type())
+			:	base(node_alloc_type(a))
+		{
+			typedef	typename is_integer<I>::type	Integral;
+			initialize_dispatch(first, last, Integral());
+		}
+
+		list&	operator=(list const& x);
+
+		void	assign(size_type n, value_type const& val)
+		{ fill_assign(n, val); }
+
+		template<typename I>
+		void	assign(I first, I last)
+		{
+			typedef	typename is_integer<I>::type	Integral;
+			assign_dispatch(first, last, Integral());
+		}
+
+		allocator_type	get_allocator() const throw()
+		{ return allocator_type(base::get_node_allocator()); }
+
+		iterator	begin() const throw()
+		{ return iterator(this->impl.node.next); }
+
+		iterator	end() const throw()
+		{ return iterator(this->impl.node); }
+
+		const_iterator	end() const throw()
+		{ return const_iterator(this->impl.node); }
+
+		reverse_iterator	rbegin() throw()
+		{ return reverse_iterator(end()); }
+
+		reverse_iterator	rend() throw()
+		{ return reverse_iterator(begin()); }
+
+		// TODO: const reverse iterator
 		~list();
 	};
 }

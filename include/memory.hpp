@@ -12,6 +12,86 @@ namespace ft
 	class BadAllocationException		:	public exception
 	{ char const*	what() throw() { return "Allocation failed!"; } };
 
+	template <class T>
+	inline T&		move(T& t)
+	{ return t; }
+
+	template <class T>
+	inline const T& move(const T& t)
+	{ return t; }
+
+	/**
+	 * @brief Swaps two values.
+	 *
+	 * @tparam T	The value's type.
+	 * @param a		A value.
+	 * @param b		Another value.
+	 */
+	template <typename T>
+	inline void	swap(T& a, T& b)
+	{
+		T	temp(move(a));
+		a = move(b);
+		b = move(temp);
+	}
+
+	/**
+	 * @brief Swaps the contents of two arrays
+	 *
+	 * @tparam T	The array's type.
+	 * @tparam N	The array's element count
+	 */
+	template <typename T, size_t N>
+	inline void	swap(T (&a)[N], T (&b)[N])
+	{
+		for (size_t n = 0; n < N; n++)
+			swap(a[n], b[n]);
+	}
+
+	template<typename A, typename = typename A::value_type>
+	struct	_alloc_traits
+	{
+		typedef	A	allocator_type;
+
+		typedef	typename A::pointer			pointer;
+		typedef	typename A::const_pointer	const_pointer;
+		typedef	typename A::value_type		value_type;
+		typedef	typename A::reference		reference;
+		typedef	typename A::const_reference	const_reference;
+		typedef	typename A::size_type		size_type;
+		typedef	typename A::difference_type	difference_type;
+
+		static pointer	allocate(A& a, size_type n)
+		{ return a.allocate(n); }
+
+		template<typname H>
+		static pointer	allocate(A& a, size_type n, Hint hint)
+		{ return a.allocate(n, hint); };
+
+		static pointer	deallocate(A& a, pointer p, size_type n)
+		{ return a.deallocate(p, n); }
+
+		template<typename T>
+		static void		construct(A& a, pointer p, const T& arg)
+		{ a.construct(p, arg); }
+
+		static size_type	max_size(const Alloc& a)
+		{ return a.max_size(); }
+
+		static A const& select_on_copy(const A& a)
+		{ return a; }
+
+		static void		on_swap(A& a, A& b)
+		{
+			if (one != two)
+				swap(a, b);
+		}
+
+		template<typename T>
+		struct rebind
+		{ typedef typename A::template rebind<T>::other other; };
+	};
+
 	template<typename T>
 	class new_allocator
 	{
