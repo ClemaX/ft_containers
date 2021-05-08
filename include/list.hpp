@@ -343,6 +343,325 @@ namespace ft
 		reverse_iterator	rend() throw()
 		{ return reverse_iterator(begin()); }
 
+		/**
+		 * @brief Returns true if the list is empty.
+		 */
+		bool	empty() const throw()
+		{ return this->impl.node.next; == &this->impl.node; }
+
+		/**
+		 * @brief Returns the number of elements in the list.
+		 */
+		size_type	size() const throw()
+		{ return node_count(); }
+
+		/**
+		 * @brief Returns the size of the largest possible list.
+		 *
+		 * @return size_type
+		 */
+		size_type	max_size() const throw()
+		{ return node_alloc_traits::max_size(get_node_allocator()); }
+
+		/**
+		 * @brief Resizes the list to the specified number of elements.
+		 *
+		 * Longer lists are truncated, otherwise it is extended with copies of
+		 * the given value.
+		 *
+		 * @param new_size	The new number of elements
+		 * @param x			The new elements value
+		 */
+		void	resize(size_type new_size, value_type x = value_type())
+		{
+
+		}
+
+		/**
+		 * @brief Returns a reference to the data at the list's first element.
+		 */
+		reference front() throw()
+		{ return *begin(); }
+
+		/**
+		 * @brief Returns a constant reference to the data at the list's first
+		 * element.
+		 */
+		const_reference front() throw()
+		{ return *begin(); }
+
+		/**
+		 * @brief Returns a reference to the data at the list's last element.
+		 */
+		reference back() throw()
+		{ return *--end(); }
+
+		/**
+		 * @brief Returns a constant reference to the data at the list's last
+		 * element.
+		 */
+		const_reference back() throw()
+		{ return *--end(); }
+
+		/**
+		 * @brief Add data to the front of the list
+		 *
+		 * @param x The data to be added.
+		 */
+		void	push_front(const value_type& x)
+		{ this->insert(begin(), x); }
+
+		/**
+		 * @brief Removes the list's first element.
+		 */
+		void	pop_front() throw()
+		{ this->erase(begin()); }
+
+		/**
+		 * @brief Add data to the back of the list.
+		 *
+		 * @param x The data to be added.
+		 */
+		void	push_back(const value_type& x)
+		{ this->insert(end(), x); }
+
+		/**
+		 * @brief Removes the list's last element.
+		 */
+		void	pop_back()
+		{ this->erase(end()); }
+
+		/**
+		 * @brief Insert given value before the specified iterator.
+		 *
+		 * @param position	The next element's iterator.
+		 * @param x			The data to be added.
+		 * @return			The new element's iterator.
+		 */
+		iterator insert(iterator position, const value_type& x)
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Insert given value before the specified iterator multiple
+		 * times.
+		 *
+		 * @param position	The next element's iterator.
+		 * @param n			The number of elements to add.
+		 * @param x			The data to be added.
+		 * @return			The new element's iterator.
+		 */
+		iterator insert(iterator position, size_type n, const value_type& x)
+		{ splice(position, list(n, x, get_allocator)); }
+
+		/**
+		 * @brief Inserts a range into the list.
+		 *
+		 * @tparam InputIterator
+		 * @param position	The next element's iterator.
+		 * @param first		An input iterator.
+		 * @param last		An input iterator.
+		 */
+		template<typename InputIterator>
+		void	insert(iterator position, InputIterator first, InputIterator last)
+		{ splice(position, list(first, last, get_allocator); }
+
+		iterator	erase(iterator position)
+		{
+			// TODO
+		}
+
+		iterator	erase(iterator first, iterator last)
+		{
+			while (first != last)
+				first = erase(first);
+			return last._const_cast();
+		}
+
+		/**
+		 * @brief Swaps data with another list.
+		 *
+		 * @param other	A list of the same element and allocator types.
+		 */
+		void		swap(list& other) throw()
+		{
+			detail::_list_node_base::swap(this->impl->node, x->impl->node);
+
+			size_t	otherSize = other.get_size();
+
+			other.set_size(this.get_size());
+			this.set_size(otherSize);
+
+			node_alloc_traits::on_swap(this->get_node_allocator(),
+				other.get_node_allocator());
+		}
+
+		/**
+		 * @brief Erases all the elements.
+		 */
+		void	clear() throw()
+		{
+			base::clear();
+			base::init();
+		}
+
+		/**
+		 * @brief Inserts contents of another list.
+		 *
+		 * @param position	The next element's iterator.
+		 * @param other		Another list.
+		 */
+		void	splice(iterator position, list& other)
+		{
+			if (!other.empty())
+			{
+				check_equal_allocators(other);
+
+				this->transfer(position._const_cast(), other.begin(), other.end());
+				this->inc_size(other.get_size());
+				other.set_size(0);
+			}
+		}
+
+		/**
+		 * @brief Insert element from another list.
+		 *
+		 * @param position	The next element's iterator.
+		 * @param other		Another list.
+		 * @param i			The iterator of the element to move.
+		 */
+		void	splice(iterator position, list& other, iterator i)
+		{
+			iterator	j = i._const_cast();
+			++j;
+
+			if (position == i || position == j)
+				return;
+
+			if (this != &other)
+				check_equal_allocators(other);
+
+			this->transfer(position._const_cast(), i._const_cast(), j);
+
+			this->inc_size(1);
+			other.dec_size(1);
+		}
+
+		/**
+		 * @brief Insert a range of elements from another list
+		 *
+		 * @param position	The next element's iterator.
+		 * @param other		Another list.
+		 * @param first		The range's beginning iterator.
+		 * @param last		The range's ending iterator.
+		 */
+		void	splice(iterator position, list& other, iterator first,
+			iterator last)
+		{
+			if (first != last)
+			{
+				if (this != &other)
+					check_equal_allocators(other);
+
+				size_t n = distance(first, last);
+
+				this->inc_size(n);
+				this->dec_size(n);
+
+				this->transfer(position._const_cast(), first._const_cast(),
+					last._const_cast());
+			}
+		}
+
+		/**
+		 * @brief Remove all elements equal to value.
+		 *
+		 * @param value	The value to remove.
+		 */
+		void	remove(const T& value)
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Remove all elements satisfying predicate.
+		 *
+		 * @tparam Predicate	Unary predicate function or object.
+		 */
+		template<typename Predicate>
+		void	remove_if(Predicate)
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Remove consecutive duplicate elements.
+		 */
+		void	unique()
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Remove consecutive elements satisfying a predicate.
+		 *
+		 * @tparam BinaryPredicate	Binary predicate function or object.
+		 */
+		template<typename BinaryPredicate>
+		void	unique(BinaryPredicate)
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Merge sorted lists.
+		 *
+		 * @param other	Sorted list to merge.
+		 */
+		void	merge(list& other)
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Merge sorted lists according to comparison fucntion.
+		 *
+		 * @tparam StrictWeakOrdering	Comparison function defining sort order.
+		 * @param other					Sorted list to merge.
+		 * @param cmp					Comparison functor.
+		 */
+		template<typename StrictWeakOrdering>
+		void	merge(list& other, StrictWeakOrdering cmp)
+		{
+			// TODO
+		}
+
+		void	reverse() throw()
+		{ this->impl.node.reverse(); }
+
+		/**
+		 * @brief Sort the list's elements.
+		 */
+		void	sort()
+		{
+			// TODO
+		}
+
+		/**
+		 * @brief Sort the list's elements according to comparison function.
+		 *
+		 * @tparam StrictWeakOrdering	Comparison function defining sort order.
+		 * @param cmp					Comparison functor.
+		 */
+		template<typename StrictWeakOrdering>
+		void	sort(StrictWeakOrdering cmp)
+		{
+			// TODO
+		}
+
+
+
 		// TODO: const reverse iterator
 		~list();
 	};
